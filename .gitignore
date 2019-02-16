@@ -1,0 +1,11 @@
+*.pyc
+test/
+*.jpg
+*.tar
+*.txt
+.idea/
+.ipynb_checkpoints/
+model/
+*.pth
+*.swp
+*.swo
