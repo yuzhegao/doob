@@ -40,11 +40,11 @@ def bce_loss(output,target,bs,alpha,gamma):
     #neg_output = 1.0 - output
     #output = torch.stack([neg_output,output],1)
 
-    weight = target*alpha + (1.0-target)*(1-alpha)
-    loss = F.binary_cross_entropy(output,target,weight)
+    #weight = target*alpha + (1.0-target)*(1-alpha)
+    #loss = F.binary_cross_entropy(output,target,weight)
 
-    #loss = -alpha*target*torch.log(output) - (1-alpha)*(1-target)*torch.log(1.0-output)
-    #loss = torch.div(torch.sum(loss),bs)
+    loss = -alpha*target*torch.log(output + 1e-8) - (1-alpha)*(1-target)*torch.log(1.0-output + 1e-8)
+    loss = torch.mean(loss)
 
     return loss
 
