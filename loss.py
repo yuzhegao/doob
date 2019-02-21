@@ -5,26 +5,29 @@ import torch.nn.functional as F
 
 def ori_smooth_l1_loss(ouptut,traget,bs):
     ## smooth l1 loss
+    sigma = 3.0
+    length = ouptut.size(0)
+
     and1 = np.logical_and((ouptut) > 3.14, (traget) > 0)
     and2 = np.logical_and((ouptut) < -3.14, (traget) < 0)
     idx1, idx2 = np.where(np.logical_or(and1, and2))[0], \
                  np.where(np.logical_not(np.logical_or(and1, and2)))[0]
-    # print idx1.shape,idx2.shape
-    loss1 = traget[idx2] + ouptut[idx2]
+    loss1 = traget[idx1] + ouptut[idx1]
     loss1 = torch.abs(loss1)
-    loss1 = torch.sum(torch.where(loss1 < 1, 0.5 * loss1 ** 2, loss1 - 0.5))
+    loss1 = torch.sum(torch.where(loss1 < 1, 0.5 * (loss1*sigma) ** 2, loss1 - (0.5/sigma**2)))
 
     loss2 = traget[idx2] - ouptut[idx2]
     loss2 = torch.abs(loss2)
-    loss2 = torch.sum(torch.where(loss2 < 1, 0.5 * loss2 ** 2, loss2 - 0.5))
+    loss2 = torch.sum(torch.where(loss2 < 1, 0.5 * (loss2*sigma) ** 2, loss2 - (0.5/sigma**2)))
 
-    loss_l1 = torch.div(loss1 + loss2, bs)
+    loss_l1 = torch.div(loss1 + loss2, length)
 
     return loss_l1
 
 def focal_loss(output,target,bs,alpha,gamma):
     ## focal loss
     eps = 1e-8
+    """
     pos_idx = np.where(target == 1)[0]
     neg_idx = np.where(target == 0)[0]
     loss_pos = -alpha * torch.sum(
@@ -32,6 +35,11 @@ def focal_loss(output,target,bs,alpha,gamma):
     loss_neg = -(1 - alpha) * torch.sum(
         torch.pow(output[neg_idx], gamma) * torch.log(1.0 - output[neg_idx] + eps))
     loss_focal = torch.div(loss_neg + loss_pos, bs)
+    """
+    loss = -alpha * target * torch.pow(1.0 - output,2) * torch.log(output + 1e-8) - \
+            (1.0 - alpha) * (1.0 - target) * torch.pow(output,2) * torch.log(1.0 - output + 1e-8)
+    loss_focal = torch.mean(loss)
+
 
     return loss_focal
 
@@ -48,9 +56,16 @@ def bce_loss(output,target,bs,alpha,gamma):
 
     return loss
 
+def attentional_focal_loss(output,target,bs,alpha,gamma):
+    loss = -alpha * target * (4**((1.0 - output)**0.5)) * torch.log(output + 1e-8) - \
+           (1.0 - alpha) * (1.0 - target) * (4**(output** 0.5)) * torch.log(1.0 - output + 1e-8)
+    loss_focal = torch.mean(loss)
+
+    return loss_focal
+
 def l1_loss(output,target,bs):
 
-    return F.smooth_l1_loss(output,target)
+    return F.smooth_l1_loss(output,target)/9.0
 
 
 
@@ -78,8 +93,8 @@ class Focal_L1_Loss(nn.Module):
         # torch.nn.CrossEntropyLoss
 
         # loss_focal = focal_loss(output_b,label_b,batch_size,self.alpha,self.gamma)
-        loss_focal = bce_loss(output_b,label_b,batch_size,0.9,self.gamma)
-        loss_l1 = l1_loss(output_o,label_o.float(),batch_size)
+        loss_focal = attentional_focal_loss(output_b,label_b,batch_size,0.75,self.gamma)
+        loss_l1 = ori_smooth_l1_loss(output_o,label_o.float(),batch_size)
 
         print loss_focal.item(),loss_l1.item()
 

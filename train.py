@@ -39,6 +39,8 @@ if use_GPU:
     model.cuda()
     torch.cuda.set_device(0)
 
+model = torch.nn.DataParallel(model, device_ids=list(range(2))).cuda()
+
 criterion = Focal_L1_Loss()                 # define criterion
 
 optimizer = torch.optim.SGD(model.parameters(),

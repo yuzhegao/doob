@@ -6,6 +6,8 @@ test/
 .idea/
 .ipynb_checkpoints/
 model/
+model_*/
 *.pth
 *.swp
 *.swo
+
