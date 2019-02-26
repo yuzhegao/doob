@@ -24,6 +24,29 @@ def ori_smooth_l1_loss(ouptut,traget,bs):
 
     return loss_l1
 
+def smooth_l1_loss(output,target,bs,weight):
+    sigma = 9.0
+    PI = 3.1415926
+
+    and1 = np.logical_and((output) > PI, (target) > 0)
+    and2 = np.logical_and((output) < -PI, (target) < 0)
+
+    idx1, idx2 = np.logical_or(and1, and2).cuda(), \
+                 np.logical_not(np.logical_or(and1,and2)).cuda()
+
+    loss1 = torch.abs(idx1.float() * (target + output)) ## add
+    loss2 = torch.abs(idx2.float() * (target - output)) ## sub
+    diff = loss1 + loss2
+
+    loss = torch.where(diff < 1.0/sigma, 0.5 * (diff*diff*sigma), diff - 0.5/sigma)
+    loss = loss * weight
+
+    #loss_l1 = torch.sum(loss)/norm *1.0
+    #print loss.size()
+    loss_l1 = torch.mean(loss)
+
+    return loss_l1
+
 def focal_loss(output,target,bs,alpha,gamma):
     ## focal loss
     eps = 1e-8
@@ -65,7 +88,7 @@ def attentional_focal_loss(output,target,bs,alpha,gamma):
 
 def l1_loss(output,target,bs):
 
-    return F.smooth_l1_loss(output,target)/9.0
+    return F.smooth_l1_loss(output,target)
 
 
 
@@ -93,7 +116,7 @@ class Focal_L1_Loss(nn.Module):
         # torch.nn.CrossEntropyLoss
 
         # loss_focal = focal_loss(output_b,label_b,batch_size,self.alpha,self.gamma)
-        loss_focal = attentional_focal_loss(output_b,label_b,batch_size,0.75,self.gamma)
+        loss_focal = bce_loss(output_b,label_b,batch_size,alpha,self.gamma)
         loss_l1 = ori_smooth_l1_loss(output_o,label_o.float(),batch_size)
 
         print loss_focal.item(),loss_l1.item()
