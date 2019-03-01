@@ -77,11 +77,14 @@ def train(epoch):
         output_b, output_o = model(imgs)
         #print output_b.size()
 
-        loss = criterion(output_b, output_o, labels)
+        loss_b,loss_o = criterion(output_b, output_o, labels)
+        loss = loss_b + loss_o
+        #loss = loss_b
         print 'in Epoch{}/iter{} loss={}'.format(epoch,idx,loss.item())
         if num_iter%100 == 0:
             with open(args.log, 'a') as f:
-                f.write('in Epoch{}/iter{} loss={}\n'.format(epoch,idx,loss.item()))
+                f.write('in Epoch{}/iter{} loss={}'.format(epoch,idx,loss.item()))
+                f.write(' {}+{}\n'.format(loss_b.item(),loss_o.item()))
 
         num_iter +=1
         if num_iter%20000 ==0 and num_iter != 0:

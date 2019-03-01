@@ -137,6 +137,8 @@ class POID_dataset(data.Dataset):
         label_crop = np.transpose(label_crop,axes=(2,0,1)) ## (2,320,320)
 
         img_tensor = self.trans(img_crop)
+        #img_crop = np.transpose(img_crop,axes=(2,0,1))
+        #img_tensor = torch.from_numpy(img_crop).float()
         label = torch.from_numpy(label_crop).float()
 
         return img_tensor,label

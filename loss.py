@@ -43,7 +43,7 @@ def smooth_l1_loss(output,target,bs,weight):
 
     #loss_l1 = torch.sum(loss)/norm *1.0
     #print loss.size()
-    loss_l1 = torch.mean(loss)
+    loss_l1 = torch.sum(loss)/15.0
 
     return loss_l1
 
@@ -75,7 +75,7 @@ def bce_loss(output,target,bs,alpha,gamma):
     #loss = F.binary_cross_entropy(output,target,weight)
 
     loss = -alpha*target*torch.log(output + 1e-8) - (1-alpha)*(1-target)*torch.log(1.0-output + 1e-8)
-    loss = torch.mean(loss)
+    loss = torch.sum(loss)/15.0
 
     return loss
 
@@ -114,14 +114,16 @@ class Focal_L1_Loss(nn.Module):
         # print label_b.size()
         # print torch.sum(label_b==1),torch.sum(label_b==0)
         # torch.nn.CrossEntropyLoss
+        num_pos,num_neg = torch.sum(label_b==1).float(),torch.sum(label_b==0).float()
+        alpha = num_neg/(num_pos+num_neg)*1.0
 
         # loss_focal = focal_loss(output_b,label_b,batch_size,self.alpha,self.gamma)
         loss_focal = bce_loss(output_b,label_b,batch_size,alpha,self.gamma)
-        loss_l1 = ori_smooth_l1_loss(output_o,label_o.float(),batch_size)
+        loss_l1 = smooth_l1_loss(output_o,label_o.float(),batch_size,label_b.float())
 
         print loss_focal.item(),loss_l1.item()
 
-        return  loss_focal + self.lamda * loss_l1
+        return  loss_focal,  self.lamda * loss_l1
 
 
 

@@ -55,11 +55,7 @@ def Conv_Stage(input_dim,dim_list,output_map=False):
         layers.append(layer)
 
     if output_map:
-        layer = nn.Sequential(
-            nn.Conv2d(dim_list[-1], 1, kernel_size=1, bias=False),
-            nn.BatchNorm2d(1),
-            nn.ReLU(inplace=True)
-        )
+        layer = nn.Conv2d(dim_list[-1], 1, kernel_size=1)
         layers.append(layer)
 
     ## with padding, doesn't change the resolution
@@ -83,13 +79,21 @@ class DoobNet(nn.Module):
         self.layer4 = self._make_layer(Bottleneck, 512, 3) ## 2048
 
         self.conv6 = Conv_Stage(2048,[256,256])
-        self.deconv7 = nn.ConvTranspose2d(256,256,kernel_size=7,stride=4)
+        self.deconv7 = nn.Sequential(
+            nn.ConvTranspose2d(256,256,kernel_size=7,stride=4),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True)
+        )
 
+        self.inplanes = 512
         self.layer8 = self._make_resblock(Bottleneck, 512, 128)
         self.layer9 = self._make_resblock(Bottleneck, 512, 8, expansion=2)
 
-        self.deconv9 = nn.ConvTranspose2d(16, 16, kernel_size=7, stride=4)
-
+        self.deconv9 = nn.Sequential(
+            nn.ConvTranspose2d(16, 16, kernel_size=7, stride=4),
+            nn.BatchNorm2d(16),
+            nn.ReLU(inplace=True)
+        )
 
         ## conv1 for boundary/orientation
         self.conv1_b = Conv_Stage(3, [8, 4, 16])
@@ -103,8 +107,9 @@ class DoobNet(nn.Module):
         ## init param
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                # m.weight.data.normal_(0, math.sqrt(2. / n))
+                nn.init.kaiming_normal_(m.weight.data)
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -174,9 +179,9 @@ class DoobNet(nn.Module):
 
         crop_h,crop_w = xf_2.size(2),xf_2.size(3)
         xf_7_crop = xf_7[:,:,3:3+crop_h,3:3+crop_w]
-        xf_concat1 = torch.cat([xf_7_crop,xf_2],dim=1)
+        xf_concat1 = torch.cat([xf_7_crop,xf_2],dim=1) ## here
 
-        xf_8_1 = self.layer8(xf_concat1) # (1, 512, 56, 56)
+        xf_8_1 = self.layer8(xf_concat1) # (1, 512, 56, 56)  ## layer8 error
         xf_8_2 = self.layer9(xf_8_1) # (1, 16, 56, 56)
         xf_9 = self.deconv9(xf_8_2) # (1, 256, 227, 227)
 
@@ -195,9 +200,10 @@ class DoobNet(nn.Module):
 if __name__ == '__main__':
     model = DoobNet()
     # model.load_resnet('/home/yuzhe/resnet50-19c8e357.pth')
-    dummy_input = torch.rand(1, 3, 375, 500)
+    dummy_input = torch.rand(1, 3, 320, 320)
     output = model(dummy_input)
     for out in output:
         print out.size()
 
-        # conv1 = Conv_Stage(input_dim=3,dim_list=[64,128,256])
+    # print model.conv10_b
+

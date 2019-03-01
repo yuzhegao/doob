@@ -16,8 +16,9 @@ from loss import Focal_L1_Loss
 use_GPU = torch.cuda.is_available()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--resume', default='/home/yuzhe/tmp_1027/doob-loss5/2_checkpoint.pth.tar', type=str, help='model file')
-parser.add_argument('--data', default='/home/yuzhe/Downloads/PIOD/PIOD/val_img/2008_000359.jpg', type=str, help='path to img')
+parser.add_argument('--resume', default='model/4_checkpoint.pth.tar', type=str, help='model file')
+parser.add_argument('--data',
+                    default='/home/gyz/document3/data/PIOD_data/Augmentation/Aug_JPEGImages/2008_000002.jpg', type=str, help='path to img')
 args = parser.parse_args()
 print args
 
@@ -28,7 +29,8 @@ def read_img(img_filename):
     with open(img_filename, 'rb') as f:
         img = Image.open(f)
         img = img.convert('RGB')
-    img_tensor = trans(img)
+    #img_tensor = trans(img)
+    img_tensor = torch.from_numpy(np.array(img).transpose(2,0,1)).float()
     img_tensor = torch.unsqueeze(img_tensor,0)
 
     return img_tensor
@@ -41,11 +43,12 @@ def vis_hist(output):
 def vis_edge(output_b):
     #bb = np.squeeze(output_b.detach().numpy())
     #vis_hist(bb.flatten())
-    b = (np.squeeze(output_b.cpu().detach().numpy()) >= 0.52)
+    b = (np.squeeze(output_b.cpu().detach().numpy()))
+    print np.max(b),np.min(b)
     b = np.stack([b, b, b], axis=2)
     print 'num of edge pixel ',np.sum(b)
     b = Image.fromarray((b * 255).astype(np.uint8))
-    b.save('tmp/result_2_5.jpg')
+    b.save('tmp/result.jpg')
 
 def eval_ori(output_o):
     o = np.squeeze(output_o.detach().numpy())
