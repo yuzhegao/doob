@@ -82,7 +82,7 @@ def bce_loss(output,target,bs,alpha,gamma):
 def attentional_focal_loss(output,target,bs,alpha,gamma):
     loss = -alpha * target * (4**((1.0 - output)**0.5)) * torch.log(output + 1e-8) - \
            (1.0 - alpha) * (1.0 - target) * (4**(output** 0.5)) * torch.log(1.0 - output + 1e-8)
-    loss_focal = torch.mean(loss)
+    loss_focal = torch.sum(loss)/15.0
 
     return loss_focal
 
@@ -118,7 +118,7 @@ class Focal_L1_Loss(nn.Module):
         alpha = num_neg/(num_pos+num_neg)*1.0
 
         # loss_focal = focal_loss(output_b,label_b,batch_size,self.alpha,self.gamma)
-        loss_focal = bce_loss(output_b,label_b,batch_size,alpha,self.gamma)
+        loss_focal = attentional_focal_loss(output_b,label_b,batch_size,alpha,self.gamma)
         loss_l1 = smooth_l1_loss(output_o,label_o.float(),batch_size,label_b.float())
 
         print loss_focal.item(),loss_l1.item()

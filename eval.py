@@ -1,4 +1,5 @@
 import os
+import cv2
 import time
 import torch
 import argparse
@@ -80,6 +81,7 @@ for idx,img in enumerate(test_lst):
     ## save to .mat
     #img_id = os.path.split()
     #save_file = os.path.join(args.result,)
+    cv2.imwrite(args.result + '/' + os.path.split(img)[1].split('.')[0] + '.png', edgemap*255)
     sio.savemat(args.result + '/' + os.path.split(img)[1].split('.')[0] + '.mat',{'edge_ori':edge_ori})
 t2 = time.time()
 print "total time: {}s".format(t2-t1)
