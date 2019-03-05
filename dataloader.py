@@ -119,7 +119,7 @@ class POID_dataset(data.Dataset):
 
         ##random crop 320x320
         offset_x,offset_y = 0,0
-        offset = False
+        offset = True
         if offset:
             offset_y = int(50*(random.random() - 0.5))
             offset_x = int(50*(random.random() - 0.5))
@@ -137,6 +137,7 @@ class POID_dataset(data.Dataset):
         label_crop = np.transpose(label_crop,axes=(2,0,1)) ## (2,320,320)
 
         img_tensor = self.trans(img_crop)
+        #img_crop = img_crop[:,:,[2,1,0]] - np.array([104.0,116.6,122.6]) ##(320,320,3)
         #img_crop = np.transpose(img_crop,axes=(2,0,1))
         #img_tensor = torch.from_numpy(img_crop).float()
         label = torch.from_numpy(label_crop).float()

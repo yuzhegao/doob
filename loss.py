@@ -43,7 +43,7 @@ def smooth_l1_loss(output,target,bs,weight):
 
     #loss_l1 = torch.sum(loss)/norm *1.0
     #print loss.size()
-    loss_l1 = torch.sum(loss)/15.0
+    loss_l1 = torch.sum(loss)/bs
 
     return loss_l1
 
@@ -82,7 +82,7 @@ def bce_loss(output,target,bs,alpha,gamma):
 def attentional_focal_loss(output,target,bs,alpha,gamma):
     loss = -alpha * target * (4**((1.0 - output)**0.5)) * torch.log(output + 1e-8) - \
            (1.0 - alpha) * (1.0 - target) * (4**(output** 0.5)) * torch.log(1.0 - output + 1e-8)
-    loss_focal = torch.sum(loss)/15.0
+    loss_focal = torch.sum(loss)/bs
 
     return loss_focal
 
