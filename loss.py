@@ -43,7 +43,7 @@ def smooth_l1_loss(output,target,bs,weight):
 
     #loss_l1 = torch.sum(loss)/norm *1.0
     #print loss.size()
-    loss_l1 = torch.sum(loss)/bs
+    loss_l1 = torch.sum(loss)/15.0
 
     return loss_l1
 
@@ -82,7 +82,7 @@ def bce_loss(output,target,bs,alpha,gamma):
 def attentional_focal_loss(output,target,bs,alpha,gamma):
     loss = -alpha * target * (4**((1.0 - output)**0.5)) * torch.log(output + 1e-8) - \
            (1.0 - alpha) * (1.0 - target) * (4**(output** 0.5)) * torch.log(1.0 - output + 1e-8)
-    loss_focal = torch.sum(loss)/bs
+    loss_focal = torch.sum(loss)/15.0
 
     return loss_focal
 
@@ -90,6 +90,31 @@ def l1_loss(output,target,bs):
 
     return F.smooth_l1_loss(output,target)
 
+def bce_loss2(output,target,bs,alpha,gamma):
+    ## the output should be without sigmoid
+    # sigmoid_output = F.sigmoid(output)
+    weight = target * alpha + (1.0 - target) * (1 - alpha)
+    loss = -(
+        output * (target - (output>=0)) -
+        torch.log(1 + torch.exp(output - 2*output*(output>=0)) + 1e-8)
+    )
+    loss = loss * weight
+    loss = torch.sum(loss)/bs
+
+    return loss
+
+def attentional_focal_loss2(output,target,bs,alpha,gamma):
+    sigmoid_output = F.sigmoid(output)
+    weight = target*alpha * (4**((1.0-sigmoid_output)**0.5)) + \
+             (1.0-target)*(1.0-alpha) * (4**(sigmoid_output**0.5))
+    loss = -(
+        output * (target - (output >= 0).float()) -
+        torch.log(1 + torch.exp(output - 2 * output * (output >= 0).float()) + 1e-8)
+    )
+    loss = loss * weight
+    loss = torch.sum(loss) / bs
+
+    return loss
 
 
 class Focal_L1_Loss(nn.Module):
@@ -118,7 +143,7 @@ class Focal_L1_Loss(nn.Module):
         alpha = num_neg/(num_pos+num_neg)*1.0
 
         # loss_focal = focal_loss(output_b,label_b,batch_size,self.alpha,self.gamma)
-        loss_focal = attentional_focal_loss(output_b,label_b,batch_size,alpha,self.gamma)
+        loss_focal = attentional_focal_loss2(output_b,label_b,batch_size,alpha,self.gamma)
         loss_l1 = smooth_l1_loss(output_o,label_o.float(),batch_size,label_b.float())
 
         print loss_focal.item(),loss_l1.item()

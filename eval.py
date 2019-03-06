@@ -69,6 +69,7 @@ for idx,img in enumerate(test_lst):
         imgs = Variable(img_tensor)
 
     output_b, output_o = model(imgs) ## [1,1,H,W]
+    output_b = torch.sigmoid(output_b)
 
     edgemap,orimap = np.squeeze(output_b.cpu().detach().numpy()),\
                      np.squeeze(output_o.cpu().detach().numpy())

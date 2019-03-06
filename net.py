@@ -193,7 +193,7 @@ class DoobNet(nn.Module):
         out_b = self.conv10_b(xf_concat_b)
         out_o = self.conv10_o(xf_concat_o)
 
-        out_b = torch.sigmoid(out_b)
+        #out_b = torch.sigmoid(out_b)
 
         return out_b,out_o
 
