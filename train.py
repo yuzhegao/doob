@@ -103,12 +103,12 @@ def train(epoch):
         """
         optimizer.step()
         #exit()
-
-    save_checkpoint({
-        'epoch': epoch + 1,
-        'state_dict': model.state_dict(),
-        'optimizer': optimizer.state_dict(),
-    }, epoch)
+    if (epoch % 5 ==0) or (epoch>=35):
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+        }, epoch)
     with open(args.log, 'a') as f:
         f.write('\nFinish this epoch in {}\n\n'.format(time.strftime('%Y.%m.%d %H:%M', time.localtime(time.time()))))
 

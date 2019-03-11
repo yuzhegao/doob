@@ -115,7 +115,13 @@ def attentional_focal_loss2(output,target,bs,alpha,gamma):
     loss = torch.sum(loss) / bs
 
     return loss
+def attentional_focal_loss3(output,target,bs,alpha,gamma):
+    sigmoid_output = F.sigmoid(output)
+    weight = target * alpha * (4.0**((1.0 - sigmoid_output)**0.5)) + (1.0 - target) *(1.0 - alpha) * (4.0**(sigmoid_output** 0.5))
+    loss = F.binary_cross_entropy_with_logits(output, target, weight, size_average=False,reduce=False)
+    loss = torch.sum(loss) / bs
 
+    return loss
 
 class Focal_L1_Loss(nn.Module):
     def __init__(self,alpha=0.1,gamma=2,lamda=0.5):
@@ -143,7 +149,7 @@ class Focal_L1_Loss(nn.Module):
         alpha = num_neg/(num_pos+num_neg)*1.0
 
         # loss_focal = focal_loss(output_b,label_b,batch_size,self.alpha,self.gamma)
-        loss_focal = attentional_focal_loss2(output_b,label_b,batch_size,alpha,self.gamma)
+        loss_focal = attentional_focal_loss3(output_b,label_b,batch_size,alpha,self.gamma)
         loss_l1 = smooth_l1_loss(output_o,label_o.float(),batch_size,label_b.float())
 
         print loss_focal.item(),loss_l1.item()

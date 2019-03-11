@@ -121,8 +121,8 @@ class POID_dataset(data.Dataset):
         offset_x,offset_y = 0,0
         offset = True
         if offset:
-            offset_y = int(50*(random.random() - 0.5))
-            offset_x = int(50*(random.random() - 0.5))
+            offset_y = int(100*(random.random() - 0.5))
+            offset_x = int(100*(random.random() - 0.5))
         img_center = [img_center[0]+offset_y,img_center[1]+offset_x]
         img_crop,label_crop = get_subwindow(img,label,img_center,320,avg_chans)
         check = False
