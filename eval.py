@@ -28,14 +28,15 @@ model = DoobNet()
 if use_GPU:
     model.cuda()
     checkpoint = torch.load(args.resume)
-    #model.load_state_dict(checkpoint['state_dict'])
+    model.load_state_dict(checkpoint['state_dict'])
+    """
     state_dict = checkpoint['state_dict']
     from collections import OrderedDict
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
         name = k[7:] ## remove `module.`
         new_state_dict[name] = v
-    model.load_state_dict(new_state_dict)
+    model.load_state_dict(new_state_dict)"""
 else:
     checkpoint = torch.load(args.resume, map_location=lambda storage, loc: storage)
     model.load_state_dict(checkpoint['state_dict'])

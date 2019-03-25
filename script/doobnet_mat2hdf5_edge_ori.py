@@ -460,9 +460,43 @@ def write_lst():
     print('Write test list to {}.'.format(os.path.join(output_dir, 'test.lst')))
 
 
+def write_caffe_lst():
+    root_path = '/home/gyz/document3/data/PIOD_data' ## the data_root, include 'Augmentation' 'Data'
+
+    val_list = []
+    piod_val_list_file = os.path.join(root_path, 'val_doc_2010.txt')
+    with open(piod_val_list_file) as f:
+        for line in f:
+            val_list.append(line.strip())
+    output_dir = os.path.join(root_path, 'Augmentation')
+    dst_label_dir = os.path.join(output_dir, 'Aug_HDF5EdgeOriLabel')
+    dst_img_dir = os.path.join(output_dir, 'Aug_JPEGImages')
+
+    train_val_pair_list = []
+    test_list = []
+
+    ## split train and val data, and then write into list file
+    h5_list = glob.glob(os.path.join(dst_label_dir, '*.h5'))
+    for h5_path in h5_list:
+        h5_filename = os.path.split(h5_path)[1]
+        h5_id = os.path.splitext(h5_filename)[0]
+        img_path = os.path.join(os.path.abspath(dst_img_dir), '{}.jpg'.format(h5_id))
+        if (h5_id in val_list):
+            test_list.append(img_path)
+        else:
+            gt_path = os.path.join(os.path.abspath(dst_label_dir), h5_filename)
+            train_val_pair_list.append((img_path, gt_path))
+    with open(os.path.join(output_dir, 'train_pair_320x320.lst'), 'w') as f:
+        for img_path, gt_path in train_val_pair_list:
+            f.write('{} {}\n'.format(img_path, gt_path))
+    print('Write train list to {}.'.format(os.path.join(output_dir, 'train_pair_320x320.lst')))
+
+
+
 if __name__ == '__main__':
     # main()
     # test('/home/yuzhe/2008_000003.mat')
-    write_lst()
+    # write_lst()
+    write_caffe_lst()
 ### /home/yuzhe/Downloads/PIOD/PIOD
 ## train: 9169 val: 925

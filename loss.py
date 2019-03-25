@@ -3,10 +3,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def ori_smooth_l1_loss(ouptut,traget,bs):
+def ori_smooth_l1_loss(ouptut,traget,bs,weight):
     ## smooth l1 loss
     sigma = 3.0
-    length = ouptut.size(0)
+    ouptut = ouptut * weight
+    traget = traget * weight
 
     and1 = np.logical_and((ouptut) > 3.14, (traget) > 0)
     and2 = np.logical_and((ouptut) < -3.14, (traget) < 0)
@@ -20,7 +21,7 @@ def ori_smooth_l1_loss(ouptut,traget,bs):
     loss2 = torch.abs(loss2)
     loss2 = torch.sum(torch.where(loss2 < 1, 0.5 * (loss2*sigma) ** 2, loss2 - (0.5/sigma**2)))
 
-    loss_l1 = torch.div(loss1 + loss2, length)
+    loss_l1 = (loss1+loss2) / bs
 
     return loss_l1
 
@@ -43,7 +44,7 @@ def smooth_l1_loss(output,target,bs,weight):
 
     #loss_l1 = torch.sum(loss)/norm *1.0
     #print loss.size()
-    loss_l1 = torch.sum(loss)/15.0
+    loss_l1 = torch.sum(loss) / bs
 
     return loss_l1
 
@@ -150,7 +151,7 @@ class Focal_L1_Loss(nn.Module):
 
         # loss_focal = focal_loss(output_b,label_b,batch_size,self.alpha,self.gamma)
         loss_focal = attentional_focal_loss3(output_b,label_b,batch_size,alpha,self.gamma)
-        loss_l1 = smooth_l1_loss(output_o,label_o.float(),batch_size,label_b.float())
+        loss_l1 = ori_smooth_l1_loss(output_o,label_o.float(),batch_size,label_b.float())
 
         print loss_focal.item(),loss_l1.item()
 

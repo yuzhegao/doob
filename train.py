@@ -39,7 +39,7 @@ if use_GPU:
     model.cuda()
     torch.cuda.set_device(0)
 
-model = torch.nn.DataParallel(model, device_ids=list(range(2))).cuda()
+#model = torch.nn.DataParallel(model, device_ids=list(range(2))).cuda()
 
 criterion = Focal_L1_Loss()                 # define criterion
 
@@ -87,6 +87,12 @@ def train(epoch):
                 f.write(' {}+{}\n'.format(loss_b.item(),loss_o.item()))
 
         num_iter +=1
+        if num_iter>=30000:
+            save_checkpoint({
+                        'epoch': epoch + 1,
+                        'state_dict': model.state_dict()
+            }, epoch)
+            exit()
         if num_iter%20000 ==0 and num_iter != 0:
             print "lr decay in iter {}".format(num_iter)
             for param_group in optimizer.param_groups:
@@ -103,7 +109,7 @@ def train(epoch):
         """
         optimizer.step()
         #exit()
-    if (epoch % 5 ==0) or (epoch>=35):
+    if (epoch % 3 ==0) or (epoch>=35):
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),

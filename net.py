@@ -4,12 +4,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Bottleneck(nn.Module):
-    def __init__(self, inplanes, planes, stride=1, downsample=None, expansion=4):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, expansion=4, dilation_rate=1):
         super(Bottleneck, self).__init__()
         self.expansion = expansion
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,padding=1, bias=False)
+
+        pad = 2 if dilation_rate == 2 else 1
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=pad, bias=False, dilation=dilation_rate)
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.conv3 = nn.Conv2d(planes, planes * self.expansion, kernel_size=1, bias=False)
@@ -76,7 +78,7 @@ class DoobNet(nn.Module):
         self.layer1 = self._make_layer(Bottleneck, 64, 3) ##256
         self.layer2 = self._make_layer(Bottleneck, 128, 4, stride=2) ## 512
         self.layer3 = self._make_layer(Bottleneck, 256, 6, stride=2) ## 1024
-        self.layer4 = self._make_layer(Bottleneck, 512, 3) ## 2048
+        self.layer4 = self._make_dilation_layer(Bottleneck, 512, 3) ## 2048  add dilation conv in res-stage 5
 
         self.conv6 = Conv_Stage(2048,[256,256])
         self.deconv7 = nn.Sequential(
@@ -131,6 +133,24 @@ class DoobNet(nn.Module):
 
         return nn.Sequential(*layers)
 
+    def _make_dilation_layer(self, block, planes, blocks, stride=1):
+        dilation = 2
+        downsample = None
+        if stride != 1 or self.inplanes != planes * 4:
+            downsample = nn.Sequential(
+                nn.Conv2d(self.inplanes, planes * 4,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(planes * 4),
+            )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample=downsample, dilation_rate=dilation))
+        self.inplanes = planes * 4
+        for i in range(1, blocks):
+            layers.append(block(self.inplanes, planes, dilation_rate=dilation))
+
+        return nn.Sequential(*layers)
+
     def _make_resblock(self, block, inplanes, planes, stride=1, expansion=4):
         downsample = None
         if stride != 1 or self.inplanes != planes * expansion:
@@ -179,9 +199,9 @@ class DoobNet(nn.Module):
 
         crop_h,crop_w = xf_2.size(2),xf_2.size(3)
         xf_7_crop = xf_7[:,:,3:3+crop_h,3:3+crop_w]
-        xf_concat1 = torch.cat([xf_7_crop,xf_2],dim=1) ## here
+        xf_concat1 = torch.cat([xf_7_crop,xf_2],dim=1)
 
-        xf_8_1 = self.layer8(xf_concat1) # (1, 512, 56, 56)  ## layer8 error
+        xf_8_1 = self.layer8(xf_concat1) # (1, 512, 56, 56)
         xf_8_2 = self.layer9(xf_8_1) # (1, 16, 56, 56)
         xf_9 = self.deconv9(xf_8_2) # (1, 256, 227, 227)
 
@@ -200,7 +220,7 @@ class DoobNet(nn.Module):
 if __name__ == '__main__':
     model = DoobNet()
     # model.load_resnet('/home/yuzhe/resnet50-19c8e357.pth')
-    dummy_input = torch.rand(1, 3, 320, 320)
+    dummy_input = torch.rand(1, 3, 224, 224)
     output = model(dummy_input)
     for out in output:
         print out.size()
